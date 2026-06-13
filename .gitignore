@@ -1,0 +1,9 @@
+# 빌드 결과물
+*.elf
+*.o
+*.bin
+*.map
+
+# 에디터
+.vscode/
+*.swp
