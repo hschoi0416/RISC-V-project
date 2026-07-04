@@ -7,7 +7,7 @@ CFLAGS  = $(ARCH) -nostdlib -nostartfiles -ffreestanding -g -O0
 LDFLAGS = -T link.ld
 
 TARGET  = kernel.elf
-SRCS_S  = Startup.S
+SRCS_S  = Startup.S trap.S
 SRCS_C  = main.c
 
 QEMU    = qemu-system-riscv64
