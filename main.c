@@ -17,6 +17,8 @@
 #define write_csr(reg, val) ({ \
     asm volatile ("csrw " #reg ", %0" :: "r"(val)); })
 
+
+
 static inline volatile uint8_t* uart_reg(int off) {
     return (volatile uint8_t*)(UART_BASE + off);
 }
@@ -35,11 +37,24 @@ void uart_puts(const char* s) {
 }
 
 extern void trap_entry(void);
+volatile uint64_t tick_count = 0;
 
 void trap_handler_c(void) {
-    uart_puts("[TRAP]\n");
-    volatile uint64_t *mtimecmp = (volatile uint64_t*)CLINT_MTIMECMP;
-    *mtimecmp = 0xFFFFFFFFFFFFFFULL;
+    unsigned long cause = read_csr(mcause);
+
+    unsigned long code = cause & 0xff;
+    int is_interrupt = (cause >> 63) & 1;
+    
+    if (is_interrupt && code == 7) {
+        volatile uint64_t *mtime = (volatile uint64_t*)CLINT_MTIME;
+        volatile uint64_t *mtimecmp = (volatile uint64_t*)CLINT_MTIMECMP;
+        *mtimecmp = *mtime + TICK_INTERVAL;
+
+        tick_count++;
+        uart_puts("tick ");
+        uart_putc('0' + (tick_count % 10));
+        uart_putc('\n');
+    }
 }
 
 void timer_init(void) {
