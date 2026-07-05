@@ -8,7 +8,7 @@ LDFLAGS = -T link.ld
 
 TARGET  = kernel.elf
 SRCS_S  = Startup.S trap.S
-SRCS_C  = main.c
+SRCS_C  = main.c task.c
 
 QEMU    = qemu-system-riscv64
 QFLAGS  = -machine virt -cpu rv64 -bios none -nographic
