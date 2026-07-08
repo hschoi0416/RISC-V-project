@@ -86,6 +86,46 @@ trap_entry:
 
 
 
+.global scheduler_start
+scheduler_start:
+    mv sp, a0 
+   
+    ld t0, 0(sp)
+    csrw mepc, t0
+    ld t0, 248(sp)
+    csrw mstatus, t0
 
+    ld ra, 8(sp)
+    ld t0, 16(sp)
+    ld t1, 24(sp)
+    ld t2, 32(sp)
+    ld s0, 40(sp)
+    ld s1, 48(sp)
+    ld a0, 56(sp)
+    ld a1, 64(sp)
+    ld a2, 72(sp)
+    ld a3, 80(sp)
+    ld a4, 88(sp)
+    ld a5, 96(sp)
+    ld a6, 104(sp)
+    ld a7, 112(sp)
+    ld s2, 120(sp)
+    ld s3, 128(sp)
+    ld s4, 136(sp)
+    ld s5, 144(sp)
+    ld s6, 152(sp)
+    ld s7, 160(sp)
+    ld s8, 168(sp)
+    ld s9, 176(sp)
+    ld s10, 184(sp)
+    ld s11, 192(sp)
+    ld t3, 200(sp)
+    ld t4, 208(sp)
+    ld t5, 216(sp)
+    ld t6, 224(sp)
+    ld gp, 232(sp)
+    ld tp, 240(sp)
 
+    addi sp, sp, 256
+    mret
 
