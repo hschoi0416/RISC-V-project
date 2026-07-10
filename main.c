@@ -1,24 +1,7 @@
 #include <stdint.h>
 #include "task.h"
+#include "riscv.h"
 
-#define UART_BASE 0x10000000UL
-
-#define UART_THR 0
-#define UART_LSR 5
-
-#define LSR_THRE (1 << 5)
-
-#define CLINT_BASE 0x02000000UL
-#define CLINT_MTIMECMP (CLINT_BASE + 0x4000)
-#define CLINT_MTIME (CLINT_BASE + 0xBFF8)
-
-#define TICK_INTERVAL 5000000UL
-#define read_csr(reg) ({ unsigned long __v; \
-    asm volatile ("csrr %0, " #reg : "=r"(__v)); __v; })
-#define write_csr(reg, val) ({ \
-    asm volatile ("csrw " #reg ", %0" :: "r"(val)); })
-
-#define CLINT_MSIP (CLINT_BASE + 0x0000)
 
 static inline volatile uint8_t* uart_reg(int off) {
     return (volatile uint8_t*)(UART_BASE + off);
@@ -83,6 +66,8 @@ void trap_handler_c(void) {
 }
 
 int first_switch = 1;
+volatile uint64_t global_tick = 0;
+
 uint64_t *trap_dispatch(uint64_t *cur_sp) {
     unsigned long cause = read_csr(mcause);
     unsigned long code = cause & 0xff;
@@ -97,6 +82,14 @@ uint64_t *trap_dispatch(uint64_t *cur_sp) {
         
         *mtimecmp = *mtime + TICK_INTERVAL;
 
+        global_tick++;
+
+        for (int i = 0; i < MAX_TASKS; i++) {
+            if (tasks[i].state == TASK_BLOCKED && global_tick >= tasks[i].wake_tick) {
+                tasks[i].state = TASK_READY;
+            }
+        }
+
         volatile uint32_t* msip = (volatile uint32_t*)CLINT_MSIP;
         *msip = 1;
 
@@ -109,7 +102,14 @@ uint64_t *trap_dispatch(uint64_t *cur_sp) {
         *msip = 0;
         
         tasks[current_task].sp = cur_sp;
-        current_task = (current_task + 1) % MAX_TASKS;
+
+        int next = current_task;
+        for (int i = 0; i < MAX_TASKS; i++) {
+            next = (next + 1) % MAX_TASKS;
+            if (tasks[next].state == TASK_READY)
+                break;
+        }
+        current_task = next;
 
         return tasks[current_task].sp;
     }
